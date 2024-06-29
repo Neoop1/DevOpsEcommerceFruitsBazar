@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend 
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: richarvey/nginx-php-fpm
+        imagePullPolicy: Always
+        name: frontend
+        ports:
+        - name: frontend
+          containerPort: 80
+
+        #volumeMounts:
+        # - name: nfs-vol
+        #   mountPath: "/var/www/html"
+             
+
+        env:
+          - name: MARIADB_HOST
+            value: mysqlserver
+
+          - name: MARIADB_DATABASE
+            value: ecommerce
+
+          - name:  MARIADB_PORT
+            value: "3306"
+
+          - name: MARIADB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-secret
+                key: mariadb-username
+                
+          - name: MARIADB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-secret
+                key: mariadb-password
+
+      volumes:
+        - name: nfs-vol
+          persistentVolumeClaim:
+            claimName: nfs-www-pvc
+     
+
+

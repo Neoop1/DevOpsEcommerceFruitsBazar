@@ -1,14 +1,18 @@
 <?php
-
 class  adminback
 {
     private $connection;
     function __construct()
-    {
-        $dbhost = "localhost";
-        $dbuser = "root";
-        $dbpass = "";
-        $dbname = "ecommerce";
+    {   
+        $envVarMARIADB_HOST = getenv('MARIADB_HOST');
+        $envVarMARIADB_PASSWORD = getenv('MARIADB_PASSWORD');
+        $envVarMARIADB_USER = getenv('MARIADB_USER');
+        $envVarMARIADB_DB = getenv('MARIADB_DB');
+
+        $dbhost = $envVarMARIADB_HOST;
+        $dbuser = $envVarMARIADB_USER;
+        $dbpass = $envVarMARIADB_PASSWORD;
+        $dbname = $envVarMARIADB_DB;
 
         $this->connection = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
 

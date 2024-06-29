@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: frontend-config
-data:
-  site-name: "EcommerceFruitsBazar-website 2.0"
-  backend-uri: "http://backend.EcommerceFruitsBazar-website.local/EcommerceFruitsBazar-website"

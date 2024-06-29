@@ -1,5 +1,0 @@
-apiVersion: v2
-name: database
-appVersion: "3.6"
-description: A Helm chart for commerceFruitsBazar-website Database MARINADB
-type: application

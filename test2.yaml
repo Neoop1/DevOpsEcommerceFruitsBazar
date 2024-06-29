@@ -25,6 +25,7 @@ spec:
       containers:
         - name: git-sync
           image: registry.k8s.io/git-sync/git-sync:v4.2.3
+          imagePullPolicy: Always
           args:
             - --repo=https://github.com/Neoop1/DevOpsEcommerceFruitsBazar.git
             - --branch=wwwdata
@@ -42,7 +43,28 @@ spec:
              mountPath: /web
              readOnly: true
           env:
-          
+          - name: MARIADB_HOST
+            value: mysqlserver
+
+          - name: MARIADB_DATABASE
+            value: ecommerce
+
+          - name:  MARIADB_PORT
+            value: "3306"
+
+          - name: MARIADB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-secret
+                key: mariadb-username
+                
+          - name: MARIADB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-secret
+                key: mariadb-password
+           - name: WEBROOT
+             value : '/web/html'
           #- name: SSH_KEY
           #  value: '<YOUR_KEY_HERE>'
           #- name: GIT_REPO
@@ -53,8 +75,6 @@ spec:
           #  value: '<YOUR_NAME>'
           # - name:  GIT_BRANCH
           #   value: 'wwwdata"
-           - name: WEBROOT
-             value : '/web/html'
           ports:
            - name: webserver
              containerPort: 80

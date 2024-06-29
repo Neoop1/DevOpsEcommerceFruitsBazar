@@ -1,56 +1,65 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: webserver
+  labels:
+    run: webserver
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend 
+      app: webserver
   template:
     metadata:
       labels:
-        app: frontend
+        app: webserver
     spec:
-      containers:
-      - image: richarvey/nginx-php-fpm
-        imagePullPolicy: Always
-        name: frontend
-        ports:
-        - name: frontend
-          containerPort: 80
-
-        #volumeMounts:
-        # - name: nfs-vol
-        #   mountPath: "/var/www/html"
-             
-
-        env:
-          - name: MARIADB_HOST
-            value: mysqlserver
-
-          - name: MARIADB_DATABASE
-            value: ecommerce
-
-          - name:  MARIADB_PORT
-            value: "3306"
-
-          - name: MARIADB_USER
-            valueFrom:
-              secretKeyRef:
-                name: mariadb-secret
-                key: mariadb-username
-                
-          - name: MARIADB_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mariadb-secret
-                key: mariadb-password
-
+      securityContext:
+        fsGroup: 101
       volumes:
-        - name: nfs-vol
-          persistentVolumeClaim:
-            claimName: nfs-www-pvc
-     
-
-
+        - name: web-data
+          emptyDir: {}
+      containers:
+        - name: git-sync
+          image: 'registry.k8s.io/git-sync/git-sync:v4.2.3'
+          imagePullPolicy: Always
+          args:
+            - '--repo=https://github.com/Neoop1/DevOpsEcommerceFruitsBazar.git'
+            - '--branch=wwwdata'
+            - '--depth=1'
+            - '--period=60s'
+            - '--link=html'
+            - '--root=/web'
+          volumeMounts:
+            - name: web-data
+              mountPath: /web
+        - name: nginx-webserver
+          image: richarvey/nginx-php-fpm
+          volumeMounts:
+            - name: web-data
+              mountPath: /web
+              readOnly: true
+          env:
+            - name: WEBROOT
+              value: /web/html
+            - name: MARIADB_HOST
+              value: mariadb
+            - name: MARIADB_DATABASE
+              value: ecommerce
+            - name: MARIADB_DB # Site env
+              value: ecommerce
+            - name: MARIADB_PORT
+              value: '3306'
+            - name: MARIADB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: mariadb-username
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: mariadb-password
+          ports:
+            - name: webserver
+              containerPort: 80

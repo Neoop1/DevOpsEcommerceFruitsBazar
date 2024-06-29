@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mariadb
+  labels:
+    run: mariadb
 spec:
   replicas: 1
   selector:
@@ -12,12 +14,36 @@ spec:
       labels:
         app: mariadb
     spec:
+      securityContext:
+        # Set this to any valid GID, and two things happen:
+        #   1) The volume "content-from-git" is group-owned by this GID.
+        #   2) This GID is added to each container.
+        runAsUser: 0
+      volumes:
+        - name: db-data
+          emptyDir: {}
       containers:
-        - image: bitnami/mariadb:11.2.4
-          name: mariadb
+        - name: mariadb-server
+          image: bitnami/mariadb:11.2.4
+          volumeMounts:
+            - name: db-data
+            #  mountPath: /database
+              subPath: ./dbas/ecommerce.sql
+              #mountPath: /dbas/
+              mountPath: /docker-entrypoint-initdb.d/ecommerce.sql
+              #readOnly: true
+              #recursiveReadOnly: Enabled
+
+
           env:
+          - name: MARIADB_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-secret
+                key: mariadb-password
+
           - name: MARIADB_HOST
-            value: mysqlserver
+            value: mariadb
 
           - name: MARIADB_DATABASE
             value: ecommerce
@@ -29,23 +55,34 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: mariadb-secret
-                key: mariadb-username
+                key: mariadb-username   
                 
           - name: MARIADB_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: mariadb-secret
                 key: mariadb-password
-          
+
+          #- name: DB_BASE_DIR
+          #  value:  /database/html
+
           ports:
             - name: mariadb
               containerPort: 3306
-              
-          volumeMounts:
-            - name: nfs-sql-vol
-              mountPath: /docker-entrypoint-initdb.d
 
-      volumes:
-        - name: nfs-sql-vol
-          persistentVolumeClaim:
-            claimName: nfs-sql-pvc
+      initContainers:
+        - name: git-sync
+          image: registry.k8s.io/git-sync/git-sync:v4.2.3
+          imagePullPolicy: Always
+          args:
+            - '--repo=https://github.com/Neoop1/DevOpsEcommerceFruitsBazar.git'
+            - '--branch=db'
+            - '--depth=1'
+            #- '--period=60s'
+            - '--link=dbas'
+            - '--root=/git'
+            - '--one-time=true'
+
+          volumeMounts:
+            - name: db-data
+              mountPath: /git

@@ -21,8 +21,9 @@ services:
     restart: unless-stopped
 
     #uncomment following lines to access db locally
-    ports:
-       - 3306:3306
+    #ports:
+    #   - 3306:3306
+    
     volumes:
       - ./db/:/docker-entrypoint-initdb.d
     networks:
